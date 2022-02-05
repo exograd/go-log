@@ -21,15 +21,17 @@ import (
 type Level string
 
 const (
+	LevelDebug Level = "debug"
 	LevelInfo  Level = "info"
 	LevelError Level = "error"
 )
 
 type Message struct {
-	Time    *time.Time
-	Level   Level
-	Message string
-	Data    Data
+	Time       *time.Time
+	Level      Level
+	DebugLevel int
+	Message    string
+	Data       Data
 
 	domain string
 }

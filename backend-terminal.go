@@ -17,6 +17,7 @@ package log
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type TerminalBackendCfg struct {
@@ -38,8 +39,13 @@ func NewTerminalBackend(cfg TerminalBackendCfg) *TerminalBackend {
 func (b *TerminalBackend) Log(msg Message) {
 	domain := fmt.Sprintf("%-24s", msg.domain)
 
-	fmt.Fprintf(os.Stderr, "%-5s  %s  %s\n",
-		msg.Level, b.Colorize(ColorGreen, domain), msg.Message)
+	level := string(msg.Level)
+	if msg.Level == LevelDebug {
+		level += "." + strconv.Itoa(msg.DebugLevel)
+	}
+
+	fmt.Fprintf(os.Stderr, "%-7s  %s  %s\n",
+		level, b.Colorize(ColorGreen, domain), msg.Message)
 
 	if len(msg.Data) > 0 {
 		fmt.Fprintf(os.Stderr, "       ")

@@ -27,10 +27,11 @@ type LoggerCfg struct {
 }
 
 type Logger struct {
-	Cfg     LoggerCfg
-	Backend Backend
-	Domain  string
-	Data    Data
+	Cfg        LoggerCfg
+	Backend    Backend
+	Domain     string
+	Data       Data
+	DebugLevel int
 }
 
 func DefaultLogger(name string) *Logger {
@@ -97,8 +98,11 @@ func (l *Logger) Child(domain string, data Data) *Logger {
 }
 
 func (l *Logger) Log(msg Message) {
-	var t time.Time
+	if msg.Level == LevelDebug && l.DebugLevel < msg.DebugLevel {
+		return
+	}
 
+	var t time.Time
 	if msg.Time == nil {
 		t = time.Now()
 	} else {
@@ -117,6 +121,23 @@ func (l *Logger) Log(msg Message) {
 	msg.Data = MergeData(l.Data, msg.Data)
 
 	l.Backend.Log(msg)
+}
+
+func (l *Logger) Debug(level int, format string, args ...interface{}) {
+	l.Log(Message{
+		Level:      LevelDebug,
+		DebugLevel: level,
+		Message:    fmt.Sprintf(format, args...),
+	})
+}
+
+func (l *Logger) DebugData(data Data, level int, format string, args ...interface{}) {
+	l.Log(Message{
+		Level:      LevelDebug,
+		DebugLevel: level,
+		Message:    fmt.Sprintf(format, args...),
+		Data:       data,
+	})
 }
 
 func (l *Logger) Info(format string, args ...interface{}) {
