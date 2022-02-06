@@ -90,8 +90,9 @@ func (l *Logger) Child(domain string, data Data) *Logger {
 		Cfg:     l.Cfg,
 		Backend: l.Backend,
 
-		Domain: l.Domain + "." + domain,
-		Data:   MergeData(l.Data, data),
+		Domain:     l.Domain + "." + domain,
+		Data:       MergeData(l.Data, data),
+		DebugLevel: l.DebugLevel,
 	}
 
 	return child
