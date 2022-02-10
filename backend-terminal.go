@@ -48,7 +48,7 @@ func (b *TerminalBackend) Log(msg Message) {
 		level, b.Colorize(ColorGreen, domain), msg.Message)
 
 	if len(msg.Data) > 0 {
-		fmt.Fprintf(os.Stderr, "       ")
+		fmt.Fprintf(os.Stderr, "         ")
 
 		i := 0
 		for k, v := range msg.Data {
