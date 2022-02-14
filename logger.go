@@ -21,7 +21,7 @@ import (
 )
 
 type LoggerCfg struct {
-	BackendType BackendType      `json:"backendType"`
+	BackendType BackendType      `json:"backend_type"`
 	BackendData *json.RawMessage `json:"backend,omitempty"`
 	Backend     interface{}      `json:"-"`
 }
