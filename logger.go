@@ -86,11 +86,16 @@ func NewLogger(name string, cfg LoggerCfg) (*Logger, error) {
 }
 
 func (l *Logger) Child(domain string, data Data) *Logger {
+	childDomain := l.Domain
+	if domain != "" {
+		childDomain += "." + domain
+	}
+
 	child := &Logger{
 		Cfg:     l.Cfg,
 		Backend: l.Backend,
 
-		Domain:     l.Domain + "." + domain,
+		Domain:     childDomain,
 		Data:       MergeData(l.Data, data),
 		DebugLevel: l.DebugLevel,
 	}
