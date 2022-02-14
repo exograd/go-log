@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type TerminalBackendCfg struct {
@@ -75,8 +76,13 @@ func (b *TerminalBackend) Colorize(color Color, s string) string {
 }
 
 func formatDatum(datum Datum) string {
-	if s, ok := datum.(fmt.Stringer); ok {
-		return s.String()
+	if v, ok := datum.(fmt.Stringer); ok {
+		s := v.String()
+		if !strings.Contains(s, " ") {
+			return s
+		}
+
+		return fmt.Sprintf("%q", s)
 	}
 
 	return fmt.Sprintf("%v", datum)
