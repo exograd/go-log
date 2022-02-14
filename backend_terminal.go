@@ -76,14 +76,18 @@ func (b *TerminalBackend) Colorize(color Color, s string) string {
 }
 
 func formatDatum(datum Datum) string {
-	if v, ok := datum.(fmt.Stringer); ok {
-		s := v.String()
-		if !strings.Contains(s, " ") {
-			return s
+	switch v := datum.(type) {
+	case fmt.Stringer:
+		return formatDatum(v.String())
+
+	case string:
+		if !strings.Contains(v, " ") {
+			return v
 		}
 
-		return fmt.Sprintf("%q", s)
-	}
+		return fmt.Sprintf("%q", v)
 
-	return fmt.Sprintf("%v", datum)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
