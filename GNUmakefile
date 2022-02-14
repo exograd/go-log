@@ -17,17 +17,14 @@ all: build
 build: FORCE
 	go build ./...
 
-check: vet staticcheck
+check: vet
 
 vet:
 	go vet ./...
-
-staticcheck:
-	staticcheck ./...
 
 test:
 	go test -race -count 1 ./...
 
 FORCE:
 
-.PHONY: all build check vet staticcheck test
+.PHONY: all build check vet test
