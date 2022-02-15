@@ -17,6 +17,7 @@ package log
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -51,14 +52,21 @@ func (b *TerminalBackend) Log(msg Message) {
 	if len(msg.Data) > 0 {
 		fmt.Fprintf(os.Stderr, "         ")
 
+		keys := make([]string, len(msg.Data))
 		i := 0
-		for k, v := range msg.Data {
+		for k := range msg.Data {
+			keys[i] = k
+			i++
+		}
+		sort.Strings(keys)
+
+		for i, k := range keys {
 			if i > 0 {
 				fmt.Fprintf(os.Stderr, " ")
 			}
 
 			fmt.Fprintf(os.Stderr, "%s=%s",
-				b.Colorize(ColorBlue, k), formatDatum(v))
+				b.Colorize(ColorBlue, k), formatDatum(msg.Data[k]))
 
 			i++
 		}
