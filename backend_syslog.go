@@ -68,17 +68,37 @@ func (b *SyslogBackend) Log(msg Message) {
 	// https://datatracker.ietf.org/doc/html/rfc5424#section-6.2.7
 	msgid := "-"
 
+	// https://datatracker.ietf.org/doc/html/rfc5424#section-6.3.1
+	sdElementId := "go-log@32473"
+	var sdElementParameters bytes.Buffer
+
+	for key, value := range msg.Data {
+		sdElementParameters.WriteString(key)
+		sdElementParameters.WriteRune('=')
+		sdElementParameters.WriteRune('"')
+		sdElementParameters.WriteString(
+			escapeSdElementValue(formatDatum2(value)))
+		sdElementParameters.WriteRune('"')
+	}
+
 	// https://datatracker.ietf.org/doc/html/rfc5424#section-6.4
 	message := BOM + msg.Message
 
-	// https://datatracker.ietf.org/doc/html/rfc5424#section-6.3.1
-	sdElementId := "go-log@32473"
+	var format string
+	var arguments []interface{}
 
 	// https://datatracker.ietf.org/doc/html/rfc5424#section-6
-	format := "<%d> %d %s %s %s %s %s [%s] %s"
-	arguments := []interface{}{
-		pri, version, datetime, hostname, appname, procid, msgid,
-		sdElementId, message}
+	if sdElementParameters.Len() == 0 {
+		format = "<%d> %d %s %s %s %s %s [%s] %s"
+		arguments = []interface{}{pri, version, datetime,
+			hostname, appname, procid, msgid, sdElementId,
+			message}
+	} else {
+		format = "<%d> %d %s %s %s %s %s [%s %s] %s"
+		arguments = []interface{}{pri, version, datetime,
+			hostname, appname, procid, msgid, sdElementId,
+			sdElementParameters.String(), message}
+	}
 
 	fmt.Fprintf(&buf, format, arguments...)
 }
@@ -96,4 +116,34 @@ func getSeverityCode(l Level) int {
 	}
 
 	return code
+}
+
+func escapeSdElementValue(src string) string {
+	var dest bytes.Buffer
+
+	for _, rune := range src {
+		switch rune {
+		case '\\':
+			dest.WriteString("\\\\")
+		case '"':
+			dest.WriteString("\\\"")
+		case ']':
+			dest.WriteString("\\]")
+		default:
+			dest.WriteRune(rune)
+		}
+	}
+
+	return dest.String()
+}
+
+func formatDatum2(datum Datum) string {
+	switch v := datum.(type) {
+	case fmt.Stringer:
+		return formatDatum2(v.String())
+	case string:
+		return v
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
