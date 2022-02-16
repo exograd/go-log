@@ -24,6 +24,7 @@ type LoggerCfg struct {
 	BackendType BackendType      `json:"backend_type"`
 	BackendData *json.RawMessage `json:"backend,omitempty"`
 	Backend     interface{}      `json:"-"`
+	DebugLevel  int              `json:"debug_level"`
 }
 
 type Logger struct {
@@ -53,8 +54,9 @@ func NewLogger(name string, cfg LoggerCfg) (*Logger, error) {
 	l := &Logger{
 		Cfg: cfg,
 
-		Domain: name,
-		Data:   Data{},
+		Domain:     name,
+		Data:       Data{},
+		DebugLevel: cfg.DebugLevel,
 	}
 
 	decodeBackendCfg := func(dest interface{}) error {
