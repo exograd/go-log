@@ -15,7 +15,9 @@
 package log
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strconv"
@@ -46,11 +48,13 @@ func (b *TerminalBackend) Log(msg Message) {
 		level += "." + strconv.Itoa(msg.DebugLevel)
 	}
 
-	fmt.Fprintf(os.Stderr, "%-7s  %s  %s\n",
+	var buf bytes.Buffer
+
+	fmt.Fprintf(&buf, "%-7s  %s  %s\n",
 		level, b.Colorize(ColorGreen, domain), msg.Message)
 
 	if len(msg.Data) > 0 {
-		fmt.Fprintf(os.Stderr, "         ")
+		fmt.Fprintf(&buf, "         ")
 
 		keys := make([]string, len(msg.Data))
 		i := 0
@@ -62,17 +66,19 @@ func (b *TerminalBackend) Log(msg Message) {
 
 		for i, k := range keys {
 			if i > 0 {
-				fmt.Fprintf(os.Stderr, " ")
+				fmt.Fprintf(&buf, " ")
 			}
 
-			fmt.Fprintf(os.Stderr, "%s=%s",
+			fmt.Fprintf(&buf, "%s=%s",
 				b.Colorize(ColorBlue, k), formatDatum(msg.Data[k]))
 
 			i++
 		}
 
-		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(&buf, "\n")
 	}
+
+	io.Copy(os.Stderr, &buf)
 }
 
 func (b *TerminalBackend) Colorize(color Color, s string) string {
