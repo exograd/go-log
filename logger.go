@@ -15,8 +15,11 @@
 package log
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	stdlog "log"
+	"strings"
 	"time"
 )
 
@@ -176,4 +179,51 @@ func (l *Logger) ErrorData(data Data, format string, args ...interface{}) {
 		Message: fmt.Sprintf(format, args...),
 		Data:    data,
 	})
+}
+
+func (l *Logger) StdLogger(level Level) *stdlog.Logger {
+	// The standard log package does not support log levels, so we have to
+	// choose one to be used for all messages.
+	//
+	// Standard loggers use the io.Writer interface as sink, which does not
+	// allow any parameter. We pass the level at the beginning of the message
+	// followed by an ASCII unit separator.
+	return stdlog.New(l, string(level)+"\x1f", 0)
+}
+
+func (l *Logger) Write(data []byte) (int, error) {
+	level := LevelInfo
+	var msg string
+
+	idx := bytes.IndexByte(data, 0x1f)
+	if idx >= 0 {
+		isKnownLevel := true
+
+		levelString := string(data[:idx])
+		switch levelString {
+		case "debug":
+			level = LevelDebug
+		case "info":
+			level = LevelInfo
+		case "error":
+			level = LevelError
+		default:
+			isKnownLevel = false
+		}
+
+		if isKnownLevel {
+			msg = string(data[idx+1:])
+		} else {
+			msg = string(data)
+		}
+	}
+
+	msg = strings.TrimSpace(msg)
+
+	l.Log(Message{
+		Level:   level,
+		Message: msg,
+	})
+
+	return len(data), nil
 }
