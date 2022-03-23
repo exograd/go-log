@@ -97,6 +97,8 @@ func (b *SyslogBackend) writeAndRetry(msg bytes.Buffer) error {
 			return err
 		}
 		if _, err := b.conn.Write(buf.Bytes()); err != nil {
+			_ = b.conn.Close()
+			b.conn = nil
 			return fmt.Errorf("cannot write log message: %w", err)
 		}
 	}
