@@ -84,7 +84,11 @@ func NewLogger(name string, cfg LoggerCfg) (*Logger, error) {
 		if err := decodeBackendCfg(&backendCfg); err != nil {
 			return nil, err
 		}
-		l.Backend = NewSyslogBackend(backendCfg)
+		backend, err := NewSyslogBackend(backendCfg)
+		if err != nil {
+			return nil, err
+		}
+		l.Backend = backend
 	case "":
 		return nil, fmt.Errorf("missing or empty backend type")
 

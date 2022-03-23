@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,26 +45,62 @@ type SyslogBackend struct {
 	conn net.Conn
 }
 
-func NewSyslogBackend(cfg SyslogBackendCfg) *SyslogBackend {
+func NewSyslogBackend(cfg SyslogBackendCfg) (*SyslogBackend, error) {
 	b := &SyslogBackend{
 		Cfg: cfg,
-	}
-
-	return b
-}
-
-func (b *SyslogBackend) connect() error {
-	addr := fmt.Sprintf("%s:%d", b.Cfg.Host, b.Cfg.Port)
-	conn, err := net.Dial("tcp", addr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot open connection to the syslog daemon: %v\n", err)
-		return err
 	}
 
 	b.mut.Lock()
 	defer b.mut.Unlock()
 
+	if err := b.connect(); err != nil {
+		err2 := fmt.Errorf("cannot initialize syslog backend: %w", err)
+		return nil, err2
+	}
+
+	return b, nil
+}
+
+// The function is unsafe and MUST be called with b.mut held.
+func (b *SyslogBackend) connect() error {
+	if b.conn != nil {
+		return nil
+	}
+
+	addr := fmt.Sprintf("%s:%d", b.Cfg.Host, b.Cfg.Port)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		b.conn = nil
+		err2 := fmt.Errorf("cannot connect to the syslog daemon: %w", err)
+		// fmt.Fprintf(os.Stderr, "%v\n", err2)
+		return err2
+	}
+
 	b.conn = conn
+	return nil
+}
+
+func (b *SyslogBackend) writeAndRetry(msg bytes.Buffer) error {
+	b.mut.Lock()
+	defer b.mut.Unlock()
+
+	var buf bytes.Buffer
+	buf.WriteString(strconv.Itoa(msg.Len()) + " ")
+	buf.Write(msg.Bytes())
+
+	if err := b.connect(); err != nil {
+		return fmt.Errorf("cannot write log message: %w", err)
+	}
+
+	if _, err := b.conn.Write(buf.Bytes()); err != nil {
+		_ = b.conn.Close()
+		if err := b.connect(); err != nil {
+			return err
+		}
+		if _, err := b.conn.Write(buf.Bytes()); err != nil {
+			return fmt.Errorf("cannot write log message: %w", err)
+		}
+	}
 
 	return nil
 }
@@ -130,6 +167,10 @@ func (b *SyslogBackend) Log(msg Message) {
 	}
 
 	fmt.Fprintf(&buf, format, arguments...)
+
+	if err := b.writeAndRetry(buf); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+	}
 }
 
 func getSeverityCode(l Level) int {
