@@ -19,7 +19,9 @@ package log
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -29,13 +31,39 @@ const (
 )
 
 type SyslogBackendCfg struct {
-	Hostname        string `json:"hostname"`
+	Host            string `json:"host"`
 	Port            int    `json:"port"`
 	ApplicationName string `json:"application_name"`
 }
 
 type SyslogBackend struct {
 	Cfg SyslogBackendCfg
+
+	mut  sync.Mutex
+	conn net.Conn
+}
+
+func NewSyslogBackend(cfg SyslogBackendCfg) *SyslogBackend {
+	b := &SyslogBackend{
+		Cfg: cfg,
+	}
+
+	return b
+}
+
+func (b *SyslogBackend) connect() error {
+	addr := fmt.Sprintf("%s:%d", b.Cfg.Host, b.Cfg.Port)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	b.mut.Lock()
+	defer b.mut.Unlock()
+
+	b.conn = conn
+
+	return nil
 }
 
 func (b *SyslogBackend) Log(msg Message) {
