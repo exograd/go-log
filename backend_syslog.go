@@ -56,6 +56,7 @@ func (b *SyslogBackend) connect() error {
 	addr := fmt.Sprintf("%s:%d", b.Cfg.Host, b.Cfg.Port)
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot open connection to the syslog daemon: %v\n", err)
 		return err
 	}
 
