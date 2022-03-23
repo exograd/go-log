@@ -50,9 +50,6 @@ func NewSyslogBackend(cfg SyslogBackendCfg) (*SyslogBackend, error) {
 		Cfg: cfg,
 	}
 
-	b.mut.Lock()
-	defer b.mut.Unlock()
-
 	if err := b.connect(); err != nil {
 		err2 := fmt.Errorf("cannot initialize syslog backend: %w", err)
 		return nil, err2
