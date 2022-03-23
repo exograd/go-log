@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -98,15 +99,13 @@ func (b *SyslogBackend) Log(msg Message) {
 
 	// https://datatracker.ietf.org/doc/html/rfc5424#section-6.3.1
 	sdElementId := "go-log@32473"
-	var sdElementParameters bytes.Buffer
+	sdElementParameters := []string{}
 
 	for key, value := range msg.Data {
-		sdElementParameters.WriteString(key)
-		sdElementParameters.WriteRune('=')
-		sdElementParameters.WriteRune('"')
-		sdElementParameters.WriteString(
-			escapeSdElementValue(formatDatum2(value)))
-		sdElementParameters.WriteRune('"')
+		escapedValue := escapeSdElementValue(formatDatum2(value))
+		sdElementParameters =
+			append(sdElementParameters,
+				fmt.Sprintf("%s=\"%s\"", key, escapedValue))
 	}
 
 	// https://datatracker.ietf.org/doc/html/rfc5424#section-6.4
@@ -116,7 +115,7 @@ func (b *SyslogBackend) Log(msg Message) {
 	var arguments []interface{}
 
 	// https://datatracker.ietf.org/doc/html/rfc5424#section-6
-	if sdElementParameters.Len() == 0 {
+	if len(sdElementParameters) == 0 {
 		format = "<%d> %d %s %s %s %d %s [%s] %s"
 		arguments = []interface{}{pri, version, datetime,
 			hostname, appname, procid, msgid, sdElementId,
@@ -125,7 +124,8 @@ func (b *SyslogBackend) Log(msg Message) {
 		format = "<%d> %d %s %s %s %d %s [%s %s] %s"
 		arguments = []interface{}{pri, version, datetime,
 			hostname, appname, procid, msgid, sdElementId,
-			sdElementParameters.String(), message}
+			strings.Join(sdElementParameters, " "),
+			message}
 	}
 
 	fmt.Fprintf(&buf, format, arguments...)
