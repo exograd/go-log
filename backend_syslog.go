@@ -117,12 +117,12 @@ func (b *SyslogBackend) Log(msg Message) {
 
 	// https://datatracker.ietf.org/doc/html/rfc5424#section-6
 	if len(sdElementParameters) == 0 {
-		format = "<%d> %d %s %s %s %d %s [%s] %s"
+		format = "<%d>%d %s %s %s %d %s [%s] %s"
 		arguments = []interface{}{pri, version, datetime,
 			hostname, appname, procid, msgid, sdElementId,
 			message}
 	} else {
-		format = "<%d> %d %s %s %s %d %s [%s %s] %s"
+		format = "<%d>%d %s %s %s %d %s [%s %s] %s"
 		arguments = []interface{}{pri, version, datetime,
 			hostname, appname, procid, msgid, sdElementId,
 			strings.Join(sdElementParameters, " "),
