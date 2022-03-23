@@ -18,6 +18,7 @@ type BackendType string
 
 const (
 	BackendTypeTerminal BackendType = "terminal"
+	BackendTypeSyslog   BackendType = "syslog"
 )
 
 type Backend interface {
