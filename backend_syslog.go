@@ -72,7 +72,6 @@ func (b *SyslogBackend) connect() error {
 	if err != nil {
 		b.conn = nil
 		err2 := fmt.Errorf("cannot connect to the syslog daemon: %w", err)
-		// fmt.Fprintf(os.Stderr, "%v\n", err2)
 		return err2
 	}
 
