@@ -33,8 +33,7 @@ const (
 )
 
 type SyslogBackendCfg struct {
-	Host            string `json:"host"`
-	Port            int    `json:"port"`
+	Addr            string `json:"addr"`
 	ApplicationName string `json:"application_name"`
 }
 
@@ -64,8 +63,7 @@ func (b *SyslogBackend) connect() error {
 		return nil
 	}
 
-	addr := fmt.Sprintf("%s:%d", b.Cfg.Host, b.Cfg.Port)
-	conn, err := net.Dial("tcp", addr)
+	conn, err := net.Dial("tcp", b.Cfg.Addr)
 	if err != nil {
 		b.conn = nil
 		err2 := fmt.Errorf("cannot connect to the syslog daemon: %w", err)
