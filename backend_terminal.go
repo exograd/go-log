@@ -25,23 +25,33 @@ import (
 )
 
 type TerminalBackendCfg struct {
-	Color bool `json:"color"`
+	Color       bool `json:"color"`
+	DomainWidth int  `json:"domain_width"`
 }
 
 type TerminalBackend struct {
 	Cfg TerminalBackendCfg
+
+	domainWidth int
 }
 
 func NewTerminalBackend(cfg TerminalBackendCfg) *TerminalBackend {
+	domainWidth := 24
+	if cfg.DomainWidth > 0 {
+		domainWidth = cfg.DomainWidth
+	}
+
 	b := &TerminalBackend{
 		Cfg: cfg,
+
+		domainWidth: domainWidth,
 	}
 
 	return b
 }
 
 func (b *TerminalBackend) Log(msg Message) {
-	domain := fmt.Sprintf("%-24s", msg.domain)
+	domain := fmt.Sprintf("%-*s", b.domainWidth, msg.domain)
 
 	level := string(msg.Level)
 	if msg.Level == LevelDebug {
