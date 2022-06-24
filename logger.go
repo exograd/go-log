@@ -62,33 +62,43 @@ func NewLogger(name string, cfg LoggerCfg) (*Logger, error) {
 		DebugLevel: cfg.DebugLevel,
 	}
 
-	decodeBackendCfg := func(dest interface{}) error {
-		if cfg.BackendData != nil {
-			if err := json.Unmarshal(*cfg.BackendData, dest); err != nil {
-				return fmt.Errorf("invalid backend configuration: %w", err)
+	backendCfg := func(cfgObj interface{}) (interface{}, error) {
+		switch {
+		case cfg.Backend != nil:
+			return cfg.Backend, nil
+
+		case cfg.BackendData != nil:
+			if err := json.Unmarshal(*cfg.BackendData, cfgObj); err != nil {
+				return nil,
+					fmt.Errorf("invalid backend configuration: %w", err)
 			}
+
+			return cfgObj, nil
 		}
 
-		return nil
+		return cfgObj, nil
 	}
 
 	switch cfg.BackendType {
 	case BackendTypeTerminal:
-		var backendCfg TerminalBackendCfg
-		if err := decodeBackendCfg(&backendCfg); err != nil {
-			return nil, err
-		}
-		l.Backend = NewTerminalBackend(backendCfg)
-	case BackendTypeSyslog:
-		var backendCfg SyslogBackendCfg
-		if err := decodeBackendCfg(&backendCfg); err != nil {
-			return nil, err
-		}
-		backend, err := NewSyslogBackend(backendCfg)
+		bcfg, err := backendCfg(&TerminalBackendCfg{})
 		if err != nil {
 			return nil, err
 		}
-		l.Backend = backend
+		bcfg2 := bcfg.(*TerminalBackendCfg)
+		l.Backend = NewTerminalBackend(*bcfg2)
+
+	case BackendTypeSyslog:
+		bcfg, err := backendCfg(&SyslogBackendCfg{})
+		if err != nil {
+			return nil, err
+		}
+		bcfg2 := bcfg.(*SyslogBackendCfg)
+		l.Backend, err = NewSyslogBackend(*bcfg2)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create syslog backend: %w", err)
+		}
+
 	case "":
 		return nil, fmt.Errorf("missing or empty backend type")
 
