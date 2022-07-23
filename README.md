@@ -1,3 +1,7 @@
+**The `github.com/exograd/go-log` package is now part of
+[go-daemon](https://github.com/exograd/go-daemon) as
+`github.com/exograd/go-daemon/dlog`.**
+
 # Project
 This repository contains a Go library providing a logger with support for log
 entry data and logger inheritance.
